@@ -281,7 +281,6 @@ Pull requests that fix a broken selector or API shape are very welcome.
 This project was inspired by the Claude-only exporter [`claude-chat-exporter`](https://github.com/agarwalvishal/claude-chat-exporter) by **agarwalvishal**, whose approach of reading the conversation from Claude's internal API instead of scraping the page is reused here for Claude. This version extends the idea to more platforms and adds PDF export.
 
 This is an independent, unofficial tool. It is not affiliated with Anthropic, OpenAI, Google, DeepSeek or xAI.
-dd your license here (for example [MIT](https://choosealicense.com/licenses/mit/)) by creating a `LICENSE` file in the repository.
 
 ## Support the project
 
