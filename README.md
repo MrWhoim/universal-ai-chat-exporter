@@ -327,16 +327,10 @@ This project was inspired by the Claude-only exporter [`claude-chat-exporter`](h
 
 This is an independent, unofficial tool. It is not affiliated with Anthropic, OpenAI, Google, DeepSeek or xAI.
 
-## License
-
-Add your license here (for example [MIT](https://choosealicense.com/licenses/mit/)) by creating a `LICENSE` file in the repository.
-
 ## Support the project
 
 If this saved you time:
 
 - ⭐ **Star the project on GitHub:** [github.com/mrwhoim](https://github.com/mrwhoim)
 - 𝕏 **Follow on X:** [x.com/v_shal_](https://x.com/v_shal_)
-#   u n i v e r s a l - a i - c h a t - e x p o r t e r 
- 
- 
+#
