@@ -35,9 +35,12 @@ No extension to install, no account, no server. It runs entirely inside the tab 
 ## Features
 
 - **One bookmarklet for five platforms.** It detects which site you are on and uses the right method.
-- **Markdown export** with YAML front matter, ready for Obsidian, Notion imports, note apps, or RAG pipelines.
-- **PDF export** with a clean A4 layout. All languages and emoji are supported (Hindi, Chinese, Arabic, and so on).
-- **Faithful content.** Code blocks keep their language, and tables, lists, links and math (as LaTeX) are preserved.
+- **Three formats from one click.** Markdown, JSON and PDF — the export card also copies the Markdown to your clipboard, so one bookmark covers every use.
+- **Clean text instead of UI debris.** A normalizer turns each site's own rendering into portable Markdown: LaTeX `\[ … \]` becomes `$$ … $$`, `<badge>` becomes a callout, `<box>`/`<divider>`/`<AsyncImage>` are unwrapped into real content or a short figure note, embedded quiz and form widgets collapse to a single line, and half-finished tables are repaired.
+- **Print-ready PDF.** Cover block, aligned metadata, typeset math (real fractions, roots, `aligned` and `cases` blocks), repeating table headers and print-safe page breaks.
+- **Markdown export** with YAML front matter and a stats block (messages, words, approximate tokens), ready for Obsidian, Notion imports, note apps, or RAG pipelines.
+- **JSON export** of the same conversation as structured data, for scripts and datasets.
+- **Faithful content.** Code blocks keep their language, and tables, lists, links and math are preserved.
 - **Follows the visible branch.** If you regenerated a reply, you get the version shown on screen.
 - **Claude extras.** Artifacts (final version), created files, widgets and text attachments are included.
 - **Auto-loads old messages** on Gemini by scrolling up before exporting.
@@ -58,9 +61,9 @@ No extension to install, no account, no server. It runs entirely inside the tab 
 ## Quick start
 
 1. Download this repository (green **Code** button, then **Download ZIP**) or clone it.
-2. Pick a bookmarklet:
-   - `bookmarklet-md.txt` exports **Markdown**.
-   - `bookmarklet-pdf.txt` exports **PDF**.
+2. Pick a bookmarklet (both run the same exporter and end in the same card):
+   - `bookmarklet-md.txt` downloads **Markdown** immediately.
+   - `bookmarklet-pdf.txt` opens the **PDF** print dialog immediately.
 3. Add it as a bookmark (see the [browser guides](#installing-the-bookmarklet-in-your-browser) below).
 4. Open a chat on any supported site and click the bookmark.
 
@@ -149,7 +152,16 @@ Mobile support depends heavily on the browser, and this project is **desktop-fir
 
 **PDF bookmark:** your browser's print dialog opens with the conversation laid out for print. Choose **Save as PDF** as the destination. For the cleanest page, turn off **Headers and footers** in the print dialog options.
 
-After a successful export, the status box also shows links to the author's GitHub and X profiles. It disappears on its own, or you can click it to close it.
+**Both bookmarks end in the same card.** It reports how many messages were exported and offers four buttons:
+
+| Button | What it does |
+|---|---|
+| **Markdown** | Downloads `title.md` (with front matter and stats). |
+| **JSON** | Downloads `title.json` with the same turns as structured data. |
+| **PDF** | Opens the print dialog again — no need to re-read the page. |
+| **Copy** | Puts the Markdown on your clipboard. |
+
+The card also shows links to the author's GitHub and X profiles. It disappears on its own after 20 seconds, or you can click it to close it.
 
 ## Output format
 
@@ -162,7 +174,12 @@ source: "https://claude.ai/chat/..."
 platform: "Claude"
 model: "claude-..."
 exported: 2026-10-14
+messages: 12
+words: 3480
+approx_tokens: 5200
 ---
+
+> **Export summary** — 12 messages (6 human, 6 replies) · 3,480 words · ~5,200 tokens · 16 min read
 
 # Human — Oct 14, 2026, 10:32 AM
 
@@ -170,16 +187,38 @@ How do I reverse a list in Python?
 
 # Claude — Oct 14, 2026, 10:32 AM
 
-You can use `reversed()` or slicing...
+## Short answer
+
+You can use `reversed()` or slicing…
+
+$$
+d_{ij}=\left\|s_i-s_j\right\|
+$$
 ```
 
-- Each turn is an H1 heading, so headings inside replies nest underneath it.
-- The front matter works as properties in Obsidian and as metadata when chunking for RAG.
+- Each turn is an H1 heading, and headings inside a reply are demoted beneath it, so the document has one clear outline.
+- Display math is always `$$ … $$` and inline math is `$ … $`, whatever delimiter the model used.
+- The front matter works as properties in Obsidian and as metadata when chunking for RAG; the summary line gives an LLM the size of the file before it reads it.
 - Interrupted or truncated Claude responses are marked with a note.
+
+### JSON
+
+```json
+{
+  "format": "universal-chat-export",
+  "version": 2,
+  "exportedAt": "2026-10-14T09:32:11.000Z",
+  "conversation": { "title": "…", "platform": "Claude", "model": "claude-…", "source": "https://claude.ai/chat/…" },
+  "stats": { "messages": 12, "words": 3480, "approxTokens": 5200, "codeBlocks": 3, "tables": 2 },
+  "messages": [
+    { "index": 1, "role": "human", "timestamp": "2026-10-14T08:30:00.000Z", "words": 6, "text": "…", "note": null }
+  ]
+}
+```
 
 ### PDF
 
-An A4 document with a title and metadata header, shaded Human turns, formatted code blocks with language labels, tables, lists, block quotes and clickable links. Math is printed as its LaTeX source (for example `E=mc^2`).
+An A4 document with a cover block (title, platform, model, message and word counts, approximate token count, reading time), a coloured rail per turn, formatted code blocks with language labels, tables with repeating headers, lists, block quotes and clickable links. Math is typeset, not printed as source: fractions are stacked, `\sqrt` gets a real radical, `\boxed` gets a frame, and `aligned`/`cases` environments become aligned rows.
 
 ## How it works
 
@@ -191,10 +230,11 @@ Everything lives in one script, `universal-chat-exporter.js`.
    - **ChatGPT:** reads the session token from the site, then requests the conversation and walks its message tree (falls back to scraping the page if the request fails).
    - **DeepSeek:** requests the chat history using the token stored by the site (falls back to scraping).
    - **Gemini and Grok:** read the rendered page. A built-in HTML-to-Markdown converter handles headings, lists, tables, code blocks (with language), links, images and math. For Gemini, the script first scrolls to the top repeatedly so that older messages load.
-3. **Build the output.**
-   - **Markdown mode** assembles the front matter and turns, then downloads a file through a temporary Blob link.
-   - **PDF mode** renders the Markdown into a hidden, same-origin frame using a small Markdown-to-DOM renderer, then opens the browser's print dialog. This keeps text selectable and supports every language, and it needs no external PDF library (which sites' security policies would block in a bookmarklet).
-4. **Show status** in a small box. The script only uses `textContent` and DOM APIs (never `innerHTML`), so it also works on sites with strict Trusted Types policies, such as Gemini.
+3. **Clean every turn.** `normalizeMarkdown()` rewrites the model's own component dialect into portable Markdown: widget code is collapsed, component tags are unwrapped, math delimiters are unified, tables are rebuilt and body headings are demoted under the turn heading. Markdown, JSON, clipboard and PDF all use this same cleaned text.
+4. **Build the output.**
+   - **Markdown and JSON** are assembled in memory and downloaded through a temporary Blob link; the JSON keeps the turns as structured data.
+   - **PDF** renders the Markdown into a hidden, same-origin frame using a small Markdown-to-DOM renderer plus a LaTeX typesetter, then opens the browser's print dialog. This keeps text selectable and supports every language, and it needs no external PDF library (which sites' security policies would block in a bookmarklet).
+5. **Show the export card** with the message count and the Markdown / JSON / PDF / Copy buttons. The script only uses `textContent` and DOM APIs (never `innerHTML`), so it also works on sites with strict Trusted Types policies, such as Gemini.
 
 The PDF bookmarklet is the same code with `window.__UCE_MODE="pdf";` placed in front.
 
@@ -228,6 +268,7 @@ When reporting a bug, please include the site, your browser, the exact status-bo
 .
 ├── README.md                     This file
 ├── universal-chat-exporter.js    Readable, commented source (edit this one)
+├── build.mjs                     Minifies the source and regenerates the three files below
 ├── bookmarklet-md.txt            Minified, ready-to-paste Markdown bookmarklet
 ├── bookmarklet-pdf.txt           Minified, ready-to-paste PDF bookmarklet
 └── install-bookmarklet.html      Drag-and-drop install page for desktop browsers
@@ -237,17 +278,21 @@ Optional: you can serve `install-bookmarklet.html` through **GitHub Pages** so t
 
 ## Building from source
 
-If you change `universal-chat-exporter.js`, rebuild the bookmarklets (needs [Node.js](https://nodejs.org)):
+If you change `universal-chat-exporter.js`, rebuild the bookmarklets and the install page (needs [Node.js](https://nodejs.org)):
 
 ```bash
-# 1. Minify
-npx terser universal-chat-exporter.js -c -m -o min.js
-
-# 2. Wrap as bookmarklets (Markdown and PDF)
-node -e 'const fs=require("fs");const m=fs.readFileSync("min.js","utf8").trim();fs.writeFileSync("bookmarklet-md.txt","javascript:"+encodeURIComponent(m));fs.writeFileSync("bookmarklet-pdf.txt","javascript:"+encodeURIComponent("window.__UCE_MODE=\"pdf\";"+m))'
+node build.mjs
 ```
 
-You can also paste the readable source into the browser console on a chat page to test quickly without rebuilding.
+That minifies the source with [terser](https://terser.org) (fetched through `npx`), writes `bookmarklet-md.txt` and `bookmarklet-pdf.txt`, and regenerates `install-bookmarklet.html` so its buttons always point at the current build. Never edit the generated files by hand.
+
+The text pipeline is DOM-free, so you can test it in Node without a browser:
+
+```bash
+node -e "require('./universal-chat-exporter.js'); const U = globalThis.__UCE; console.log(U.normalizeMarkdown('\\[ a^2 \\]'))"
+```
+
+`__UCE` exposes `normalizeMarkdown`, `summarize`, `buildMd`, `buildJson`, `parseTex` and `mdToDom`. You can also paste the readable source into the browser console on a chat page to test quickly without rebuilding.
 
 ## Adding support for another site
 
